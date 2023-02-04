@@ -1,4 +1,6 @@
 import customtkinter
+import json
+import requests
 
 customtkinter.set_appearance_mode("dark") 
 customtkinter.set_default_color_theme("dark-blue")
@@ -36,8 +38,14 @@ class App(customtkinter.CTk):
         self.entry.delete(0, "end")
 
     def search(self):
-        self.textbox.insert("insert", self.entry.get() + "\n")
-        self.entry.delete(0, "end")
+        if self.entry.get() != "":
+            self.textbox.delete("0.0", "end")
+            response = requests.get("https://itunes.apple.com/search?entity=song&limit=15&term=" + self.entry.get())
+            o = response.json()
+            songs = []
+            self.entry.delete(0, "end")
+            for result in o["results"]:
+                self.textbox.insert("insert", result["trackName"] + "\n")
 
     def create_toplevel(self):
         self.toplevel = customtkinter.CTkToplevel(self)
