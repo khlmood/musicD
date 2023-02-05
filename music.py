@@ -1,6 +1,9 @@
 import customtkinter
 import json
 import requests
+from socket import gethostbyname
+from socket import create_connection
+from winsound import Beep
 
 customtkinter.set_appearance_mode("dark") 
 customtkinter.set_default_color_theme("dark-blue")
@@ -14,9 +17,6 @@ class App(customtkinter.CTk):
         self.geometry("730x380")
         self.title("Download Music")
         self.minsize(300, 200)
-
-        self.textbox = customtkinter.CTkTextbox(master=self)
-        self.textbox.pack(side='top', padx=20, pady=(20, 0))
 
         self.frame = customtkinter.CTkFrame(self)
         self.frame.pack(side='bottom')
@@ -34,18 +34,23 @@ class App(customtkinter.CTk):
         self.entry.pack(side='left', padx=20, pady=20)
         
     def download(self):
-        self.textbox.insert("insert", self.entry.get() + "\n")
-        self.entry.delete(0, "end")
+        if is_connected():
+            print("ok")
+        else:
+            print("ok")
 
     def search(self):
-        if self.entry.get() != "":
-            self.textbox.delete("0.0", "end")
-            response = requests.get("https://itunes.apple.com/search?entity=song&limit=15&term=" + self.entry.get())
-            o = response.json()
-            songs = []
-            self.entry.delete(0, "end")
-            for result in o["results"]:
-                self.textbox.insert("insert", result["trackName"] + "\n")
+        if is_connected():
+            if self.entry.get() != "":
+                response = requests.get("https://itunes.apple.com/search?entity=song&limit=15&term=" + self.entry.get())
+                o = response.json()
+                songs = []
+                self.entry.delete(0, "end")
+                for result in o["results"]:
+                    songs.append(result["trackName"])
+                self.create_widgets(songs)
+        else:
+            self.connection_error()
 
     def create_toplevel(self):
         self.toplevel = customtkinter.CTkToplevel(self)
@@ -63,6 +68,33 @@ class App(customtkinter.CTk):
         if entry.get() != "":
             self.path = entry.get()
         self.toplevel.destroy()
+
+    def create_widgets(self, songs):
+        for i, song in enumerate(songs):
+            var = customtkinter.IntVar()
+            cb = customtkinter.CTkCheckBox(self, text=song, variable=var)
+            cb.pack()
+            label = customtkinter.CTkLabel(self, text=f"Selection {i+1}: {var.get()}")
+            label.pack()
+    
+    def connection_error(self):
+        self.toplevel = customtkinter.CTkToplevel(self)
+        self.toplevel.title("Connection Error")
+        self.toplevel.geometry("280x100+400+300")
+
+        warning_sign = "⚠️"
+        label = customtkinter.CTkLabel(master=self.toplevel, text=f"{warning_sign} Please check your internet connection.")
+        label.pack(side='left', padx=20, pady=20)
+        Beep(frequency=1000, duration=500)
+
+
+def is_connected():
+    try:
+        host = gethostbyname("www.google.com")
+        create_connection((host, 80), 2)
+        return True
+    except:
+        return False
 
 if __name__ == "__main__":
     app = App()
